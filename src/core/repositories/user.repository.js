@@ -175,21 +175,17 @@ export function makeUserRepository({ prisma }) {
      * @param {string} [updatedByUserId] - The ID of the user performing the update (for auditing).
      * @returns {Promise<object>} The updated user object (safe fields only).
      */
-    async update(id, data) {
+    async update(id, userData) {
       return prisma.user.update({
         where: { id },
-        data,
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          username: true,
-          role: true,
-          status: true,
-          emailVerifiedAt: true,
-          profilePictureUrl: true,
+        data: {
+          ...userData,
+          preferences: Array.isArray(userData.preferences)
+            ? { deleteMany: {}, create: userData.preferences.map((name) => ({ name })) }
+            : undefined
         },
-      });
+        include: { preferences: true },
+      });    
     },
 
     /**

@@ -19,9 +19,6 @@ export function makeProfilingService({ roomRepository, questionRepository, categ
 
             logger.info("Creating temporary user with data: %o", profile);
 
-            // --- MULAI BAGIAN YANG DULU TRANSACTION ---
-
-            // 1. Find City (ganti tx -> prisma)
             const city = await prisma.city.findFirst({
                 where: { id: profile.city },
                 include: { country: true },
@@ -31,7 +28,6 @@ export function makeProfilingService({ roomRepository, questionRepository, categ
                 throw new NotFoundError(`City '${profile.city}' not found`);
             }
 
-            // 2. Find Role (ganti tx -> prisma)
             const role = await prisma.role.findFirst({
                 where: { name: "User" },
             });
@@ -39,22 +35,25 @@ export function makeProfilingService({ roomRepository, questionRepository, categ
             if (!role) {
                 throw new NotFoundError("Default 'USER' role not found.");
             }
-
-            // 3. Create User (ganti tx -> prisma)
-            const newUser = await prisma.user.create({
-                data: {
-                    name: profile.name,
-                    email: profile.email,
-                    gender: profile.gender,
-                    occupation: profile.occupation,
-                    phoneNumber: profile.phoneNumber,
-                    bornDate: profile.bornDate,
-                    cityId: city.id,
-                    countryId: city.country.id,
-                    roleId: role.id,
-                }
-            });
-
+            let newUser;
+            const existingUser = await userRepository.findByEmail(profile.email);
+            if (existingUser) {
+                newUser = existingUser;
+            } else {
+                newUser = await prisma.user.create({
+                    data: {
+                        name: profile.name,
+                        email: profile.email,
+                        gender: profile.gender,
+                        occupation: profile.occupation,
+                        phoneNumber: profile.phoneNumber,
+                        bornDate: profile.bornDate,
+                        cityId: city.id,
+                        countryId: city.country.id,
+                        roleId: role.id,
+                    }
+                });
+            }
             // 4. Create Preferences (ganti tx -> prisma)
             // Code logic tetap menggunakan Promise.all sesuai permintaan
             await Promise.all(
@@ -67,40 +66,6 @@ export function makeProfilingService({ roomRepository, questionRepository, categ
                     })
                 )
             );
-
-            // --- SELESAI BAGIAN DATABASE ---
-
-            // const tokenPayload = {
-            //     userId: newUser.id,
-            //     email: newUser.email,
-            //     role: role.name
-            // };
-
-            // // Sign Token
-            // const accessToken = jwt.sign(
-            //     tokenPayload,
-            //     env.JWT_SECRET,
-            //     { expiresIn: '10d' }
-            // );
-
-            // const refreshToken = jwt.sign(
-            //     {
-            //         userId: newUser.id,
-            //         refreshTokenVersion: newUser.refreshTokenVersion || 1,
-            //     },
-            //     env.JWT_REFRESH_SECRET,
-            //     {
-            //         expiresIn: env.JWT_REFRESH_EXPIRES_IN,
-            //     }
-            // );
-
-            // const refreshTokenHash = crypto.createHash("sha256").update(refreshToken).digest("hex");
-
-            // console.log("accessToken:", refreshTokenHash);
-            // await userRepository.update(newUser.id, {
-            //     refreshTokenHash,
-            //     lastLoginAt: new Date(),
-            // });
 
             const payload = {
                 "user_id": newUser.id,

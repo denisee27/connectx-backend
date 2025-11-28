@@ -92,7 +92,28 @@ export function makeRoomRepository({ prisma }) {
         findBySlug(slug) {
             return prisma.room.findUnique({
                 where: { slug },
-                select: safeRoomSelect,
+                select: {
+                    ...safeRoomSelect,
+                    participants: {
+                        select: {
+                            id: true,
+                            user: {
+                                select: {
+                                    name: true,
+                                    mbti: true,
+                                    mbtiDesc: true,
+                                },
+                            },
+                        },
+                    },
+                    createdBy: {
+                        select: {
+                            name: true,
+                            mbti: true,
+                            mbtiDesc: true,
+                        },
+                    },
+                },
             });
         },
 

@@ -53,6 +53,7 @@ export function makeCategoryRepository({ prisma }) {
                             slug: true,
                             type: true,
                             address: true,
+                            banner: true,
                             datetime: true,
                             city: true,
                             _count: {

@@ -1,3 +1,4 @@
+import { env } from "./config/index.js";
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
@@ -5,7 +6,6 @@ import cookieParser from "cookie-parser";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger.js";
 import { httpLogger, requestContext } from "./infra/logger/index.js";
-import { env } from "./config/index.js";
 import { logger } from "./infra/logger/index.js";
 import container from "./container.js";
 import { authRouter } from "./api/v1/auth/auth.router.js";

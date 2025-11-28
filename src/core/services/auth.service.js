@@ -28,6 +28,7 @@ export function makeAuthService({
   authenticationLogRepository,
   env,
   logger,
+  prisma
 }) {
   return {
     async login({ email, password }) {
@@ -38,7 +39,6 @@ export function makeAuthService({
       }
 
       const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-      console.log("user123", isPasswordValid);
       if (!isPasswordValid) {
         throw new UnauthorizedError("Invalid credentials");
       }

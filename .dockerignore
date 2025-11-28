@@ -1,0 +1,36 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# Environment variables (Gunakan Secret Manager di GCP)
+.env
+.env.*
+!.env.example
+
+# Version Control
+.git
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Editor & OS files
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Testing & Coverage
+coverage
+__tests__
+test
+*.test.js
+*.spec.js
+
+# Documentation
+README.md
+docs
+Guide

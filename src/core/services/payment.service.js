@@ -31,7 +31,7 @@ const normalizeItems = (items = [], total) => {
     const quantity = Number.isFinite(qty) && qty > 0 ? Math.round(qty) : 1;
     return {
       id: item.id || `item-${idx + 1}`,
-      name: item.name || `Item ${idx + 1}`,
+      name: 'Event Subscription' || `Item ${idx + 1}`,
       price,
       quantity,
     };
@@ -72,7 +72,7 @@ const buildOrderId = (userId) => {
   //const ts = Date.now().toString(36); // compact timestamp
   const rnd = Math.random().toString(36).slice(2, 6);
   // Midtrans order_id max length ~50; this stays well under the limit
-  return `pay_${safeUser}_${rnd}`;
+  return `connectx_${safeUser}_${rnd}`;
 };
 
 export function makePaymentService({ paymentRepository, midtransClient, env, logger }) {
