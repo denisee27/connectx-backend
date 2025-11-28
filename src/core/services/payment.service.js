@@ -69,10 +69,10 @@ const mapMidtransStatus = (transactionStatus, fraudStatus) => {
 
 const buildOrderId = (userId) => {
   const safeUser = (userId || "guest").replace(/[^a-zA-Z0-9]/g, "").slice(0, 8) || "guest";
-  const ts = Date.now().toString(36); // compact timestamp
+  //const ts = Date.now().toString(36); // compact timestamp
   const rnd = Math.random().toString(36).slice(2, 6);
   // Midtrans order_id max length ~50; this stays well under the limit
-  return `pay_${safeUser}_${ts}_${rnd}`;
+  return `pay_${safeUser}_${rnd}`;
 };
 
 export function makePaymentService({ paymentRepository, midtransClient, env, logger }) {
