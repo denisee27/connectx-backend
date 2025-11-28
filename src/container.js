@@ -2,6 +2,7 @@ import { createContainer, asFunction, asValue } from "awilix";
 import prisma from "./infra/db/index.js";
 import { logger } from "./infra/logger/index.js";
 import { env } from "./config/index.js";
+import { makeMidtransClient } from "./infra/payment/midtrans.payment.js";
 import { makeMailerService } from "./infra/mailer/index.js";
 import { makeAuthService } from "./core/services/auth.service.js";
 import { makeUserService } from "./core/services/user.service.js";
@@ -27,6 +28,8 @@ import { makeCityRepository } from "./core/repositories/city.repository.js";
 import { makeAuthenticationLogRepository } from "./core/repositories/authenticationLog.repository.js";
 import { makeConversationService } from "./core/services/conversation.service.js";
 import { makeCurrentSessionRepository } from "./core/repositories/currentSession.repository.js";
+import { makePaymentRepository } from "./core/repositories/payment.repository.js";
+import { makePaymentService } from "./core/services/payment.service.js";
 
 const container = createContainer();
 
@@ -35,6 +38,7 @@ container.register({
   prisma: asValue(prisma),
   logger: asValue(logger),
   env: asValue(env),
+  midtransClient: asFunction(makeMidtransClient).singleton(),
 });
 
 // Register services
@@ -52,6 +56,7 @@ container.register({
   profilingService: asFunction(makeProfilingService).singleton(),
   placeService: asFunction(makePlaceService).singleton(),
   scheduleService: asFunction(makeScheduleService).singleton(),
+  paymentService: asFunction(makePaymentService).singleton(),
 });
 
 // Register repositories
@@ -68,6 +73,7 @@ container.register({
   categoryRepository: asFunction(makeCategoryRepository).singleton(),
   authenticationLogRepository: asFunction(makeAuthenticationLogRepository).singleton(),
   userLogRepository: asFunction(makeUserLogRepository).singleton(),
+  paymentRepository: asFunction(makePaymentRepository).singleton(),
 });
 
 export default container;

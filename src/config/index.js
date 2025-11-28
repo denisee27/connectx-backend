@@ -46,6 +46,15 @@ const envSchema = z.object({
   AI_AGENT_URL: z.string().url().optional(),
   AI_TOKEN: z.string().min(1).optional(),
 
+  // Midtrans (Snap)
+  MIDTRANS_SERVER_KEY: z.string().optional(),
+  MIDTRANS_CLIENT_KEY: z.string().optional(),
+  MIDTRANS_IS_PRODUCTION: z
+    .string()
+    .default("false")
+    .transform((val) => val === "true"),
+  MIDTRANS_WEBHOOK_SECRET: z.string().optional(),
+
   // Cookie settings
   COOKIE_DOMAIN: z.string().optional(),
   COOKIE_SECURE: z
@@ -57,6 +66,10 @@ const envSchema = z.object({
   APP_URL: z.string(),
   AGENTURL: z.string(),
   TOKENAGENT: z.string(),
+  MIDTRANS_SERVER_KEY: z.string(),
+  MIDTRANS_CLIENT_KEY: z.string(),
+  MIDTRANS_IS_PRODUCTION: z.string(),
+  MIDTRANS_MERCHANT_ID: z.string(),
 });
 
 const _env = envSchema.safeParse(process.env);

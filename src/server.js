@@ -21,6 +21,7 @@ import { scheduleRouter } from "./api/v1/schedule/schedule.router.js";
 import { categoryRouter } from "./api/v1/category/category.router.js";
 import { roomRouter } from "./api/v1/room/room.router.js";
 import { conversationRouter } from "./api/v1/conversation/conversation.router.js";
+import { paymentRouter } from "./api/v1/payment/payment.router.js";
 
 const app = express();
 app.set("trust proxy", 1); // if behind a proxy/CDN
@@ -92,6 +93,7 @@ app.use("/api/v1/places", placeRouter);
 app.use("/api/v1/roles", rolesRouter);
 app.use("/api/v1/stats", statsRouter);
 app.use("/api/v1/healthz", healthRouter);
+app.use("/api/v1/payments", paymentRouter);
 
 // 404 handler
 app.use((req, res) => {

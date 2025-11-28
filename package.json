@@ -14,7 +14,8 @@
     "test": "NODE_ENV=test jest --watchAll",
     "test:ci": "NODE_ENV=test jest --ci",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "debug": "nodemon --inspect=9229 src/server.js"
   },
   "keywords": [],
   "author": "",
@@ -33,6 +34,7 @@
     "google-auth-library": "^10.5.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "midtrans-client": "^1.4.3",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.9",
     "pino": "^10.0.0",
