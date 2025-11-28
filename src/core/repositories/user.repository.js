@@ -22,6 +22,7 @@ export function makeUserRepository({ prisma }) {
     mbtiDesc: true,
     descPersonal: true,
     bornDate: true,
+    preferences: true,
   };
   const calculateAge = (bornDate) => {
     if (!bornDate) return null;
