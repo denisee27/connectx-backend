@@ -16,6 +16,7 @@ export const safeRoomSelect = {
     category: true,
     regionId: true,
     type: true,
+    placeName: true,
     title: true,
     description: true,
     datetime: true,
@@ -138,9 +139,82 @@ export function makeRoomRepository({ prisma }) {
          * @param {string} id
          * @returns {Promise<Room>}
          */
-        create(data) {
+        async create(data) {
+            const payload = data || {};
+
+            const toSlug = (str) =>
+                (str || "")
+                    .toString()
+                    .trim()
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, "")
+                    .replace(/\s+/g, "-")
+                    .replace(/-+/g, "-");
+
+            const normalizeType = (t) => {
+                const v = (t || "").toLowerCase();
+                return ["meetup", "dinner", "event"].includes(v) ? v : null;
+            };
+
+            const ensureUniqueSlug = async (base) => {
+                let candidate = base || "event";
+                let idx = 2;
+                // Try base, then append -2, -3, ... until unique
+                while (true) {
+                    const exists = await prisma.room.findUnique({ where: { slug: candidate } });
+                    if (!exists) return candidate;
+                    candidate = `${base}-${idx++}`;
+                    if (idx > 100) {
+                        // Safety break to avoid infinite loops
+                        return `${base}-${Date.now()}`;
+                    }
+                }
+            };
+
+            // Derive slug from title if absent
+            const baseSlug = payload.slug || toSlug(payload.title);
+            const slug = await ensureUniqueSlug(baseSlug);
+
+            // Derive regionId from City -> Country relation if not provided
+            let regionId = payload.regionId || null;
+            const cityId = payload.cityId || null;
+            if (!regionId && cityId) {
+                const city = await prisma.city.findUnique({
+                    where: { id: cityId },
+                    select: {
+                        country: {
+                            select: { regionId: true },
+                        },
+                    },
+                });
+                regionId = city?.country?.regionId || null;
+            }
+
+            const type = normalizeType(payload.type);
+            let maxParticipant = Number(payload.maxParticipant);
+            if (!Number.isFinite(maxParticipant)) {
+                maxParticipant = type === "meetup" ? 10 : type === "dinner" ? 4 : 0; // 0 = unlimited
+            }
+
+            const createData = {
+                slug,
+                categoryId: payload.categoryId,
+                regionId,
+                cityId,
+                type,
+                title: payload.title,
+                placeName: payload.placeName ?? payload.place_name ?? null,
+                description: payload.description ?? null,
+                datetime: payload.datetime ? new Date(payload.datetime) : new Date(),
+                banner: payload.banner ?? null,
+                address: payload.address ?? null,
+                gmaps: payload.gmaps ?? null,
+                maxParticipant,
+                createdById: payload.userId ?? payload.createdById ?? null,
+            };
+
             return prisma.room.create({
-                data,
+                data: createData,
                 select: safeRoomSelect,
             });
         },
@@ -168,36 +242,50 @@ export function makeRoomRepository({ prisma }) {
             });
         },
 
-        findUpcoming(userId) {
-            return prisma.room.findMany({
+        async findUpcoming(userId) {
+            const rooms = await prisma.room.findMany({
                 where: {
-                    participants: {
-                        some: {
-                            userId,
+                    OR: [
+                        {
+                            participants: {
+                                some: { userId },
+                            },
                         },
-                    },
+                        { createdById: userId },
+                    ],
                     datetime: {
                         gte: new Date(),
                     },
                 },
                 select: safeRoomSelect,
             });
+            return rooms.map((room) => ({
+                ...room,
+                creator: room.createdById === userId,
+            }));
         },
 
-        findPast(userId) {
-            return prisma.room.findMany({
+        async findPast(userId) {
+            const rooms = await prisma.room.findMany({
                 where: {
-                    participants: {
-                        some: {
-                            userId,
+                    OR: [
+                        {
+                            participants: {
+                                some: { userId },
+                            },
                         },
-                    },
+                        { createdById: userId },
+                    ],
                     datetime: {
                         lt: new Date(),
                     },
                 },
                 select: safeRoomSelect,
             });
+            return rooms.map((room) => ({
+                ...room,
+                creator: room.createdById === userId,
+            }));
         },
 
     };

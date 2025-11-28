@@ -1,5 +1,8 @@
 import path from "path";
 import { fileURLToPath } from "url";
+import sharp from "sharp";
+import { v4 as uuidv4 } from "uuid";
+import fs from "fs/promises";
 
 export default {
     async getPopular(req, res, next) {
@@ -67,6 +70,54 @@ export default {
             const { filename } = req.params;
             const imagePath = path.resolve(__dirname, '../../../../../uploads', filename);
             res.sendFile(imagePath);
+        } catch (error) {
+            next(error);
+        }
+    },
+    async createRoom(req, res, next) {
+        try {
+            const roomService = req.scope.resolve("roomService");
+            const { userId } = req.user;
+            // Validate file presence (required)
+            if (!req.file) {
+                return res.status(400).json({ success: false, error: "Event image is required" });
+            }
+
+            const __filename = fileURLToPath(import.meta.url);
+            const __dirname = path.dirname(__filename);
+
+            // Ensure uploads directory exists (outside project root)
+            const uploadsDir = path.resolve(__dirname, "../../../../../uploads");
+            await fs.mkdir(uploadsDir, { recursive: true });
+
+            // Normalize output to JPEG for consistent compression
+            const outputExt = "jpg";
+
+            // Generate UUID filename
+            const filename = `${uuidv4()}.${outputExt}`;
+            const outputPath = path.join(uploadsDir, filename);
+
+            // Compress image with sharp
+            await sharp(req.file.buffer)
+                .rotate()
+                .resize({ width: 1280, withoutEnlargement: true })
+                .jpeg({ quality: 80 })
+                .toFile(outputPath);
+
+            // Prepare payload: include banner filename
+            const payload = {
+                ...req.body,
+                banner: filename, // store only filename (type inferred by extension)
+            };
+
+            // Coerce numeric fields
+            if (typeof payload.maxParticipant === "string") {
+                const n = Number(payload.maxParticipant);
+                if (!Number.isNaN(n)) payload.maxParticipant = n;
+            }
+
+            const room = await roomService.createRoom({ userId, ...payload });
+            res.status(201).json(room);
         } catch (error) {
             next(error);
         }

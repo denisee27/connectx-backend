@@ -280,6 +280,7 @@ model Room {
   cityId         String        @map("city_id")        
   city           City          @relation(fields: [cityId], references: [id])
   type           RoomType?
+  placeName      String?      @map("place_name")
   title          String
   description    String?       @db.Text
   datetime       DateTime
