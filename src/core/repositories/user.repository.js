@@ -159,7 +159,7 @@ export function makeUserRepository({ prisma }) {
     /**
      * Creates a new user.
      * @param {object} data - The user data, including a `passwordHash`.
-     * @returns {Promise<object>} The newly created user object (safe fields only).
+     * @returns {fPromise<object>} The newly created user object (safe fields only).
      */
     async create(data) {
       return prisma.user.create({
@@ -175,15 +175,20 @@ export function makeUserRepository({ prisma }) {
      * @param {string} [updatedByUserId] - The ID of the user performing the update (for auditing).
      * @returns {Promise<object>} The updated user object (safe fields only).
      */
-    async update(id, data, updatedByUserId) {
+    async update(id, data) {
       return prisma.user.update({
         where: { id },
-        data: {
-          ...data,
-          // Conditionally add updatedByUserId if it's provided
-          ...(updatedByUserId && { updatedByUserId }),
+        data,
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          username: true,
+          role: true,
+          status: true,
+          emailVerifiedAt: true,
+          profilePictureUrl: true,
         },
-        select: safeUserSelect,
       });
     },
 

@@ -11,7 +11,7 @@ const AGENT_STREAM_QUERY_PATH = ":streamQuery?alt=sse";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SERVICE_ACCOUNT_PATH = path.resolve(
-  __dirname,
+__dirname,
   "../../../key/strange-mind-475717-i4-7c3713d03a9c.json"
 );
 

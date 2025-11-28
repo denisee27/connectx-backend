@@ -4,7 +4,7 @@ export function makeProfileService({ userRepository }) {
             return userRepository.findById(id);
         },
         async updateProfile(id, data) {
-            return userRepository.updateProfile(id, data);
+            return userRepository.update(id, data);
         },
     };
 }

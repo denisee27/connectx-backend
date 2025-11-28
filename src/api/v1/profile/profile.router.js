@@ -9,6 +9,7 @@ import { authMiddleware } from '../../../infra/security/auth.middleware.js';
 const router = Router();
 
 router.get('/', authMiddleware, profileController.getProfile);
-router.put('/update', validate(updateProfileSchema), profileController.updateProfile);
+router.post("/update", authMiddleware, validate(updateProfileSchema), profileController.updateProfile);
+
 
 export { router as profileRouter };
