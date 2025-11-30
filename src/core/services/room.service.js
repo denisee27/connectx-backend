@@ -1,13 +1,30 @@
-export function makeRoomService({ roomRepository }) {
+import jwt from "jsonwebtoken";
+
+export function makeRoomService({ roomRepository, env }) {
     return {
-        async getHighlights() {
-            return roomRepository.getHighlights();
+        async getHighlights(cityId) {
+            return roomRepository.getHighlights(cityId);
         },
-        async getPopular() {
-            return roomRepository.getPopular();
+        async getPopular(cityId) {
+            return roomRepository.getPopular(cityId);
         },
-        async getRoomBySlug(slug) {
-            return roomRepository.findBySlug(slug);
+        async getRoomBySlug(slug, authHeader) {
+            let userId = null;
+            if (authHeader && authHeader.startsWith("Bearer ")) {
+                try {
+                    const token = authHeader.substring(7);
+                    const decoded = jwt.verify(token, env.JWT_SECRET);
+                    if (decoded && decoded.userId) {
+                        userId = decoded.userId;
+                    }
+                } catch (err) {
+                    return null;
+                }
+            }
+            return roomRepository.findBySlug(slug, userId);
+        },
+        async joinRoom(roomId, userId) {
+            return roomRepository.joinRoom(roomId, userId);
         },
         async getRooms(filters) {
             const { page, limit, sort, categories, country, title } = filters;

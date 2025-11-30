@@ -19,6 +19,12 @@ export function makeAuthRepository({ prisma }) {
       return prisma.user.findUnique({
         where: { id },
         include: {
+          city: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
           role: {
             select: {
               id: true,
@@ -34,6 +40,24 @@ export function makeAuthRepository({ prisma }) {
         where: { email },
       });
     },
+    async findByEmailIsUsing(email,) {
+      return prisma.user.findUnique({
+        where: { email, passwordHash: { not: null } },
+      });
+    },
+
+    async findByEmailRegistered(email) {
+      return prisma.user.findUnique({
+        where: { email, passwordHash: null },
+      });
+    },
+
+    async findByPasswordResetToken(token) {
+      return prisma.user.findUnique({
+        where: { passwordResetToken: token },
+      });
+    },
+
     async findByUsername(username) {
       return prisma.user.findUnique({
         where: { username },

@@ -18,6 +18,7 @@ router.get('/highlights', roomController.getHighlights);
 router.get('/image/:filename', roomController.getImage);
 router.get('/popular', roomController.getPopular);
 router.get('/:slug', roomController.getRoomBySlug);
+router.post('/:id/join', authMiddleware, roomController.joinRoom);
 router.get('/', roomController.getRooms);
 router.post('/create', authMiddleware, upload.single('imageFile'), roomController.createRoom);
 

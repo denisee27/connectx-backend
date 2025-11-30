@@ -6,5 +6,8 @@ export function makeProfileService({ userRepository }) {
         async updateProfile(id, data) {
             return userRepository.update(id, data);
         },
+        async findTemporaryUser(id) {
+            return userRepository.findTemporaryUser(id);
+        },
     };
 }

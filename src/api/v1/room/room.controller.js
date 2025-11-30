@@ -8,16 +8,31 @@ export default {
     async getPopular(req, res, next) {
         try {
             const roomService = req.scope.resolve("roomService");
-            const rooms = await roomService.getPopular();
+            const { cityId } = req.query;
+            const rooms = await roomService.getPopular(cityId);
             res.status(200).json(rooms);
         } catch (error) {
             next(error);
         }
     },
+
+    async joinRoom(req, res, next) {
+        try {
+            const roomService = req.scope.resolve("roomService");
+            const { id } = req.params;
+            const { userId } = req.user;
+            await roomService.joinRoom(id, userId);
+            res.status(200).json({ message: "Successfully joined the room" });
+        } catch (error) {
+            next(error);
+        }
+    },
+
     async getHighlights(req, res, next) {
         try {
             const roomService = req.scope.resolve("roomService");
-            const rooms = await roomService.getHighlights();
+            const { cityId } = req.query;
+            const rooms = await roomService.getHighlights(cityId);
             res.status(200).json(rooms);
         } catch (error) {
             next(error);
@@ -26,8 +41,9 @@ export default {
     async getRoomBySlug(req, res, next) {
         try {
             const roomService = req.scope.resolve("roomService");
+            const authHeader = req.headers.authorization;
             const { slug } = req.params;
-            const room = await roomService.getRoomBySlug(slug);
+            const room = await roomService.getRoomBySlug(slug, authHeader);
             res.status(200).json(room);
         } catch (error) {
             next(error);

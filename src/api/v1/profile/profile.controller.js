@@ -15,6 +15,17 @@ export default {
             next(error);
         }
     },
+    async getTemporaryUser(req, res, next) {
+        try {
+            const profileService = req.scope.resolve("profileService");
+            const profile = await profileService.findTemporaryUser(req.params.id);
+            res.status(200).json({ success: true, data: profile });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+
     async updateProfile(req, res, next) {
         try {
             const profileService = req.scope.resolve("profileService");

@@ -43,6 +43,37 @@ export const registerationSchema = z
   })
   .strict({ message: unexpectedFieldMessage });
 
+export const forgotPasswordSchema = z.object({
+  body: z.object({
+    email: z.string().email("Invalid email address"),
+  }),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    body: z
+      .object({
+        token: z.string().trim().min(1, "Token is required"),
+        password: z.string().min(8, "Password must be at least 8 characters"),
+        confirmPassword: z.string().min(8, "Confirm password must be at least 8 characters"),
+      })
+      .strict({ message: unexpectedFieldMessage }),
+  })
+  .refine((data) => data.body.password === data.body.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  })
+  .strict({ message: unexpectedFieldMessage });
+
+export const requestEmailSchema = z
+  .object({
+    body: z
+      .object({
+        email: z.string().email("Invalid email address"),
+      })
+      .strict({ message: unexpectedFieldMessage }),
+  })
+  .strict({ message: unexpectedFieldMessage });
 
 export const verifyEmailSchema = z
   .object({

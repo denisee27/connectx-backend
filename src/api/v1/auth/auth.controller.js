@@ -121,6 +121,64 @@ export default {
       next(exception);
     }
   },
+
+  async forgotPassword(req, res, next) {
+    try {
+      const authService = req.scope.resolve("authService");
+      const clientContext = req.clientContext;
+
+      await authService.forgotPassword(req.body, clientContext);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          message: "Password reset email sent",
+        },
+      });
+    } catch (exception) {
+      next(exception);
+    }
+  },
+
+  async requestEmail(req, res, next) {
+    try {
+      const authService = req.scope.resolve("authService");
+      const clientContext = req.clientContext;
+      const email = req.body;
+
+      await authService.requestEmail(email, clientContext);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          message: "Email sent successfully",
+        },
+      });
+    } catch (exception) {
+      next(exception);
+    }
+  },
+
+
+  async resetPassword(req, res, next) {
+    try {
+      const authService = req.scope.resolve("authService");
+      const clientContext = req.clientContext;
+
+      // req.body already cleaned
+      await authService.resetPassword(req.body, clientContext);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          message: "Password reset successfully, please login again",
+        },
+      });
+    } catch (exception) {
+      next(exception);
+    }
+  },
+
 };
 
 

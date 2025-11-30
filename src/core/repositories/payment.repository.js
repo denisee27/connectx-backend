@@ -8,7 +8,14 @@ export const safePaymentSelect = {
   method: true,
   midtransId: true,
   vaNumber: true,
+  roomId: true,
   metadata: true,
+  room: {
+    select: {
+      id: true,
+      title: true,
+    },
+  },
   webhookPayload: true,
   paidAt: true,
   expiresAt: true,
@@ -37,6 +44,16 @@ export function makePaymentRepository({ prisma }) {
         where: { orderId },
         data,
         select: safePaymentSelect,
+      });
+    },
+
+    async isPayment(userId, roomId) {
+      return await prisma.payment.findFirst({
+        where: {
+          userId,
+          roomId,
+          status: { in: [PaymentStatus.PAID, PaymentStatus.SETTLED] },
+        },
       });
     },
   };

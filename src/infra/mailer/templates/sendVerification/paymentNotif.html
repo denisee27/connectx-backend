@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Payment Notification</title>
+</head>
+
+<body style="margin:0;padding:0;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;line-height:1.6;color:#333;background-color:#F3F4F6;">
+    <center>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background-color:#F3F4F6;">
+            <tbody>
+                <tr>
+                    <td align="center" style="padding:20px;">
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.05);border-collapse:separate;mso-table-lspace:0pt;mso-table-rspace:0pt;">
+                            <!-- Header -->
+                            <thead>
+                                <tr>
+                                    <td style="background-color:#FF9836;background-image:linear-gradient(135deg, #FF9836, #FF7A2F);padding:30px 20px;text-align:center;">
+                                        <h1 style="margin:0;font-size:24px;font-weight:700;letter-spacing:0.5px;color:#ffffff;font-family:Helvetica, Arial, sans-serif;">ConnectX</h1>
+                                    </td>
+                                </tr>
+                            </thead>
+                            <!-- Content -->
+                            <tbody>
+                                <tr>
+                                    <td style="padding:40px 30px;background-color:#ffffff;">
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                            <tr>
+                                                <td align="center" style="padding-bottom:20px;">
+                                                    <span style="display:inline-block;padding:8px 16px;border-radius:50px;background-color:{{statusBgColor}};color:{{statusColor}};font-weight:600;font-size:14px;border:1px solid {{statusColor}};font-family:Helvetica, Arial, sans-serif;">
+                                                        {{statusIcon}} &nbsp; {{status}}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding-bottom:16px;">
+                                                    <p style="font-size:18px;font-weight:600;margin:0;color:#111;font-family:Helvetica, Arial, sans-serif;">
+                                                        Hi {{userName}},
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding-bottom:30px;">
+                                                    <p style="color:#4B5563;margin:0;font-family:Helvetica, Arial, sans-serif;">
+                                                        {{statusMessage}}
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding-bottom:30px;">
+                                                    <!-- Details Box -->
+                                                    <table width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:20px;">
+                                                        <tr>
+                                                            <td style="padding:8px 0;border-bottom:1px solid #F3F4F6;color:#6B7280;font-size:14px;font-family:Helvetica, Arial, sans-serif;" width="40%">Order ID</td>
+                                                            <td style="padding:8px 0;border-bottom:1px solid #F3F4F6;font-weight:600;color:#111;font-size:14px;text-align:right;font-family:Helvetica, Arial, sans-serif;" width="60%">{{orderId}}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td style="padding:8px 0;border-bottom:1px solid #F3F4F6;color:#6B7280;font-size:14px;font-family:Helvetica, Arial, sans-serif;">Amount</td>
+                                                            <td style="padding:8px 0;border-bottom:1px solid #F3F4F6;font-weight:600;color:#111;font-size:14px;text-align:right;font-family:Helvetica, Arial, sans-serif;">{{amount}}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td style="padding:8px 0;color:#6B7280;font-size:14px;font-family:Helvetica, Arial, sans-serif;">Date</td>
+                                                            <td style="padding:8px 0;font-weight:600;color:#111;font-size:14px;text-align:right;font-family:Helvetica, Arial, sans-serif;">{{date}}</td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="center">
+                                                    <a href="{{frontendUrl}}/home" target="_blank" style="display:inline-block;background-color:#FF9836;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-family:Helvetica, Arial, sans-serif;">
+                                                        Open ConnectX
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <!-- Footer -->
+                            <tfoot>
+                                <tr>
+                                    <td style="background-color:#F9FAFB;padding:20px;text-align:center;font-size:12px;color:#9CA3AF;border-top:1px solid #E5E7EB;font-family:Helvetica, Arial, sans-serif;">
+                                        &copy; {{year}} ConnectX. All rights reserved.<br>
+                                        This is an automated message, please do not reply.
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </center>
+</body>
+
+</html>

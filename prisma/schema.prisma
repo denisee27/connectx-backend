@@ -297,6 +297,7 @@ model Room {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  payments  Payment[]
 
   @@index([slug])
   @@index([regionId])
@@ -382,6 +383,8 @@ model Payment {
   id           String   @id @default(uuid())
   orderId      String   @unique
   userId       String
+  roomId       String?   @map("room_id")
+  room         Room?     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   amount       Int
   currency     String   @default("IDR")
   status       PaymentStatus @default(PENDING)

@@ -3,14 +3,12 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { UnauthorizedError, NotFoundError, ValidationError } from "../errors/httpErrors.js";
 import { buildSendVerificationEmail } from "../../infra/mailer/templates/sendVerification/sendVerification.js";
-// import {
-//   Status,
-//   AuthenticationEvent,
-// } from "@prisma/client";
 
 import pkg from "@prisma/client";
 import { addTime } from "../../utils/time.utils.js";
 const { Status, AuthenticationEvent } = pkg;
+import { buildSendForgotPasswordEmail } from "../../infra/mailer/templates/sendForgotPassword/sendForgotPassword.js";
+
 
 const safeMetadata = ({ platform, location, extra }) => {
   const meta = {
@@ -26,6 +24,7 @@ export function makeAuthService({
   mailerService,
   rbacRepository,
   authenticationLogRepository,
+  roomRepository,
   env,
   logger,
   prisma
@@ -82,6 +81,7 @@ export function makeAuthService({
       });
 
       const permissions = await rbacRepository.getUserPermissions(user.id);
+      const paymentData = await roomRepository.isPayment(user.id);
 
       logger.info({ userId: user.id }, "User logged in");
 
@@ -93,7 +93,10 @@ export function makeAuthService({
           email: user.email,
           name: user.name,
           role: user.role,
-
+          city: user.city,
+          profilePictureUrl: user.profilePictureUrl,
+          isPayment: !!paymentData,
+          phoneNumber: user.phoneNumber,
           permissions: permissions.map((p) => p.code),
         },
       };
@@ -110,6 +113,7 @@ export function makeAuthService({
 
       // Get fresh permissions from database
       const permissions = await rbacRepository.getUserPermissions(userId);
+      const paymentData = await roomRepository.isPayment(userId);
       logger.info(
         {
           userId,
@@ -124,6 +128,10 @@ export function makeAuthService({
         name: user.name,
         role: user.role,
         status: user.status,
+        city: user.city,
+        profilePictureUrl: user.profilePictureUrl,
+        isPayment: !!paymentData,
+        phoneNumber: user.phoneNumber,
         emailVerifiedAt: user.emailVerifiedAt,
         profilePictureUrl: user.profilePictureUrl,
         permissions: permissions.map((p) => p.code),
@@ -213,13 +221,12 @@ export function makeAuthService({
     async createUser(clientContext, data) {
       const { email, name, bornDate, phoneNumber, gender, occupation, countryId, cityId, password } = data;
 
-      const emailExists = await authRepository.findByEmail(email);
-      const role = await authRepository.findRoleByName("User"); // TODO: validate this
-
-      if (emailExists) {
-        throw new ValidationError("Email already exists");
+      const existingUser = await authRepository.findByEmailIsUsing(email);
+      if (existingUser) {
+        throw new ValidationError("Email is already in use");
       }
 
+      const role = await authRepository.findRoleByName("User"); // TODO: validate this
       if (!role) {
         throw new ValidationError("Default role User not found");
       }
@@ -234,21 +241,79 @@ export function makeAuthService({
         appUrl: env.APP_URL,
         token,
         name: name,
+        email: email,
+      });
+
+      const alreadyRegistered = await authRepository.findByEmailRegistered(email);
+      if (alreadyRegistered) {
+        await userRepository.update(alreadyRegistered.id, {
+          name,
+          bornDate,
+          phoneNumber,
+          gender,
+          occupation,
+          countryId,
+          cityId,
+          passwordHash: hashedPassword,
+          roleId: role.id,
+          verificationToken: hashedToken,
+          verificationExpiresAt: expiresAt,
+          emailVerifiedAt: null,
+        });
+      } else {
+        await prisma.$transaction(async (tx) => {
+          await tx.user.create({
+            data: {
+              email,
+              name,
+              bornDate,
+              phoneNumber,
+              gender,
+              occupation,
+              countryId,
+              cityId,
+              passwordHash: hashedPassword,
+              roleId: role.id,
+              verificationToken: hashedToken,
+              verificationExpiresAt: expiresAt,
+            },
+          });
+        });
+      }
+
+      await mailerService.sendEmail({
+        to: email,
+        ...verificationEmail,
+        appUrl: env.APP_URL,
+      });
+    },
+
+    async requestEmail({ email }, clientContext) {
+      const user = await authRepository.findByEmail(email);
+      if (!user) {
+        return;
+      }
+
+      if (user.emailVerifiedAt) {
+        throw new ConflictError("Email already verified");
+      }
+
+      const token = crypto.randomBytes(32).toString("hex");
+      const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+      const expiresAt = addTime(new Date(), "24h");
+
+      const verificationEmail = buildSendVerificationEmail({
+        appUrl: env.APP_URL,
+        token,
+        name: user.name,
+        email: user.email,
+        username: user.username,
       });
 
       await prisma.$transaction(async (tx) => {
-        const user = await tx.user.create({
+        await tx.user.update({
+          where: { id: user.id },
           data: {
-            email,
-            name,
-            bornDate,
-            phoneNumber,
-            gender,
-            occupation,
-            countryId,
-            cityId,
-            passwordHash: hashedPassword,
-            roleId: role.id,
             verificationToken: hashedToken,
             verificationExpiresAt: expiresAt,
           },
@@ -256,9 +321,8 @@ export function makeAuthService({
       });
 
       await mailerService.sendEmail({
-        to: email,
+        to: user.email,
         ...verificationEmail,
-        appUrl: env.APP_URL,
       });
     },
 
@@ -269,6 +333,10 @@ export function makeAuthService({
 
       if (user.emailVerifiedAt) {
         throw new ConflictError("Email already verified");
+      }
+
+      if (!user.verificationExpiresAt || user.verificationExpiresAt < now) {
+        throw new ValidationError("Verification token has expired");
       }
 
       await prisma.$transaction(async (tx) => {
@@ -282,6 +350,81 @@ export function makeAuthService({
         });
       });
     },
+    async forgotPassword({ email }, clientContext) {
+      const user = await authRepository.findByEmail(email);
+      if (!user) {
+        return;
+      }
+
+      const token = crypto.randomBytes(32).toString("hex");
+      const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+      await prisma.$transaction(async (tx) => {
+        const now = new Date();
+
+        // update user data
+        await tx.user.update({
+          where: { id: user.id },
+          data: {
+            passwordResetToken: hashedToken,
+            passwordResetExpires: addTime(now, "1h"),
+          },
+        });
+      });
+
+      const forgotPasswordEmail = buildSendForgotPasswordEmail({
+        appUrl: env.APP_URL,
+        token,
+        name: user.name,
+        username: user.username,
+      });
+
+      await mailerService.sendEmail({
+        to: user.email,
+        ...forgotPasswordEmail,
+        appUrl: env.APP_URL,
+      });
+
+      logger.info({ userId: user.id }, "Forgot password email sent");
+    },
+
+    async resetPassword({ token, password, confirmPassword }, clientContext) {
+      if (password !== confirmPassword) {
+        throw new ValidationError("Passwords do not match");
+      }
+
+      const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+      const user = await authRepository.findByPasswordResetToken(hashedToken);
+
+      if (!user) {
+        throw new ValidationError("Token is invalid");
+      }
+
+      const now = new Date();
+      if (!user.passwordResetExpires || user.passwordResetExpires <= now) {
+        throw new ValidationError("Token has expired");
+      }
+
+      const hashedPassword = await bcrypt.hash(password, env.BCRYPT_ROUNDS);
+
+      await prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: user.id },
+          data: {
+            passwordHash: hashedPassword,
+            passwordResetToken: null,
+            passwordResetExpires: null,
+            refreshTokenHash: null,
+            refreshTokenVersion: user.refreshTokenVersion + 1,
+            userVersion: user.userVersion + 1,
+          },
+        });
+      });
+
+      logger.info({ userId: user.id }, "Password reset");
+    },
+
+
 
   };
 }

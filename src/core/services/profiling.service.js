@@ -6,73 +6,62 @@ import crypto from "crypto";
 export function makeProfilingService({ roomRepository, questionRepository, categoryRepository, userRepository, prisma, logger, env }) {
     return {
         async createTemporaryUser(body) {
-            const {
+            let {
                 profile,
                 preferences,
                 answers,
                 meetUpPreference,
+                isAuthenticated,
             } = body;
 
-            if (!profile || !preferences || !answers || !meetUpPreference) {
-                throw new ValidationError("Missing required fields");
+            const userDummy = await userRepository.findDummyUser(profile.email);
+            if (userDummy && !isAuthenticated) {
+                await userRepository.deleteByEmail(userDummy.email);
+
             }
 
-            logger.info("Creating temporary user with data: %o", profile);
-
-            const city = await prisma.city.findFirst({
-                where: { id: profile.city },
-                include: { country: true },
-            });
-
-            if (!city) {
-                throw new NotFoundError(`City '${profile.city}' not found`);
+            const userExisting = await userRepository.findExistingUser(profile.email);
+            if (userExisting && !isAuthenticated) {
+                return { requestLogin: true };
             }
-
-            const role = await prisma.role.findFirst({
-                where: { name: "User" },
-            });
-
-            if (!role) {
-                throw new NotFoundError("Default 'USER' role not found.");
-            }
-            let newUser;
-            const existingUser = await userRepository.findByEmail(profile.email);
-            if (existingUser) {
+            let newUser = profile;
+            if (isAuthenticated) {
+                const existingUser = await userRepository.findByEmail(profile.email);
                 newUser = existingUser;
+                preferences = existingUser.preferences.map((p) => p.name);
             } else {
+                const role = await prisma.role.findFirst({ where: { name: "User", }, });
                 newUser = await prisma.user.create({
                     data: {
                         name: profile.name,
                         email: profile.email,
+                        roleId: role.id,
                         gender: profile.gender,
                         occupation: profile.occupation,
                         phoneNumber: profile.phoneNumber,
                         bornDate: profile.bornDate,
-                        cityId: city.id,
-                        countryId: city.country.id,
-                        roleId: role.id,
+                        cityId: profile.city,
+                        countryId: profile.countryId,
                     }
                 });
+                await Promise.all(
+                    preferences.map((preference) =>
+                        prisma.preference.create({
+                            data: {
+                                userId: newUser.id,
+                                name: preference,
+                            }
+                        })
+                    )
+                );
             }
-            // 4. Create Preferences (ganti tx -> prisma)
-            // Code logic tetap menggunakan Promise.all sesuai permintaan
-            await Promise.all(
-                preferences.map((preference) =>
-                    prisma.preference.create({
-                        data: {
-                            userId: newUser.id,
-                            name: preference,
-                        }
-                    })
-                )
-            );
 
             const payload = {
                 "user_id": newUser.id,
                 "preferences": preferences,
                 "personalities": answers,
                 "meetup_preferences": meetUpPreference,
-                "city_id": city.id,
+                "city_id": newUser?.city?.id || newUser?.cityId,
             }
             logger.info("Calling matchmaking API");
             const response = await axios.post(env.AI_AGENT_URL + "/user/generate-embedding",
@@ -83,8 +72,6 @@ export function makeProfilingService({ roomRepository, questionRepository, categ
                         "Content-Type": "application/json"
                     }
                 });
-
-            console.log('matches:', response.data.matches)
             const matches = response.data.matches || [];
             if (!matches || matches.length === 0) {
                 logger.warn("Matchmaking API returned no room IDs");
@@ -92,9 +79,8 @@ export function makeProfilingService({ roomRepository, questionRepository, categ
             }
             const roomIds = matches.map(match => match.id);
             const rooms = await roomRepository.findByIds(roomIds);
-            console.log('rooms:', rooms)
             logger.info("Operation successful");
-            return { rooms };
+            return { id: newUser.id, rooms };
         },
 
         async getQuestions() {

@@ -14,7 +14,6 @@ export const safeRoomSelect = {
     cityId: true,
     city: true,
     category: true,
-    regionId: true,
     type: true,
     placeName: true,
     title: true,
@@ -32,68 +31,146 @@ export const safeRoomSelect = {
  */
 export function makeRoomRepository({ prisma }) {
     return {
-        /**
-         * @param {string} id
-         * @returns {Promise<Room | null>}
-         */
-        findById(id) {
-            return prisma.room.findUnique({
-                where: { id },
-                select: safeRoomSelect,
+
+        async isPayment(userId) {
+            return prisma.payment.findFirst({
+                where: { userId: userId, status: 'SETTLED' },
             });
         },
 
         /**
+         * @param {string} roomId
+         * @param {string} userId
+         * @returns {Promise<void>}
+         */
+        async joinRoom(roomId, userId) {
+            const exists = await prisma.participant.findUnique({
+                where: {
+                    roomId_userId: {
+                        roomId,
+                        userId
+                    }
+                }
+            });
+
+            if (!exists) {
+                await prisma.participant.create({
+                    data: {
+                        roomId,
+                        userId,
+                    },
+                });
+            }
+        },
+        /**
          * @returns {Promise<Room[]>}
          */
-        getHighlights() {
-            return prisma.room.findMany({
-                take: 6,
-                where: {
-                    datetime: {
-                        gte: new Date(),
-                    },
+        async getHighlights(cityId) {
+            const whereClause = {
+                datetime: {
+                    gte: new Date(),
                 },
-                orderBy: {
-                    participants: {
-                        _count: 'desc',
-                    },
-                },
-                select: safeRoomSelect,
-            });
+            };
+
+            if (cityId && cityId !== 'undefined' && cityId !== 'null') {
+                whereClause.cityId = cityId;
+            }
+
+            try {
+                const allIds = await prisma.room.findMany({
+                    where: whereClause,
+                    select: { id: true }
+                });
+
+                if (allIds.length === 0) return [];
+
+                const shuffled = allIds.sort(() => 0.5 - Math.random());
+                const selectedIds = shuffled.slice(0, 6).map(r => r.id);
+
+                return prisma.room.findMany({
+                    where: { id: { in: selectedIds } },
+                    select: safeRoomSelect
+                });
+
+            } catch (error) {
+                return prisma.room.findMany({
+                    take: 6,
+                    where: whereClause,
+                    select: safeRoomSelect,
+                });
+            }
         },
 
         /**
          * @param {Pagination} { page, limit, search, categoryId, type }
          * @returns {Promise<PageData<Room>>}
          */
-        getPopular(userId) {
-            return prisma.room.findMany({
-                take: 8,
+        /**
+         * @param {string} cityId
+         * @returns {Promise<{ meetup: Room[], dinner: Room[], event: Room[] }>}
+         */
+        async getPopular(cityId) {
+            console.log(cityId)
+            const whereBase = (cityId && cityId !== 'undefined' && cityId !== 'null') ? { cityId } : {};
+            const commonOptions = {
+                take: 4,
                 orderBy: {
                     participants: {
                         _count: 'desc',
                     },
                 },
-                // where: {
-                //     cityId: {
-                //         // contains: userId,
-                //         mode: 'insensitive',
-                //     },
-                // },
-                select: safeRoomSelect,
-            });
+                select: {
+                    ...safeRoomSelect,
+                    city: {
+                        select: {
+                            name: true,
+                        },
+                    },
+                    category: {
+                        select: {
+                            name: true,
+                        },
+                    },
+                },
+            };
+
+            const [meetup, dinner, event] = await Promise.all([
+                prisma.room.findMany({
+                    where: { ...whereBase, type: 'meetup' },
+                    ...commonOptions,
+                }),
+                prisma.room.findMany({
+                    where: { ...whereBase, type: 'dinner' },
+                    ...commonOptions,
+                }),
+                prisma.room.findMany({
+                    where: { ...whereBase, type: 'event' },
+                    ...commonOptions,
+                }),
+            ]);
+
+            return {
+                meetup,
+                dinner,
+                event,
+            };
         },
 
         /**
          * @param {string} slug
+         * @param {string|null} userId
          * @returns {Promise<Room | null>}
          */
-        findBySlug(slug) {
-            return prisma.room.findUnique({
+        async findBySlug(slug, userId) {
+            const room = await prisma.room.findUnique({
                 where: { slug },
                 select: {
                     ...safeRoomSelect,
+                    _count: {
+                        select: {
+                            participants: true,
+                        },
+                    },
                     participants: {
                         select: {
                             id: true,
@@ -102,20 +179,49 @@ export function makeRoomRepository({ prisma }) {
                                     name: true,
                                     mbti: true,
                                     mbtiDesc: true,
-                                },
+                                    profilePictureUrl: true,
+                                }
                             },
-                        },
+                            userId: true // Make sure to select userId to check against
+                        }
                     },
                     createdBy: {
                         select: {
                             name: true,
                             mbti: true,
                             mbtiDesc: true,
+                            profilePictureUrl: true,
                         },
                     },
                 },
             });
+
+            if (!room) return null;
+
+            let isJoining = false;
+            let isCreator = false;
+            let isPayment = false;
+            if (userId && room.participants) {
+                const paymentCheck = await prisma.payment.findFirst({
+                    where: {
+                        userId,
+                        roomId: room.id,
+                        status: { in: ["PAID", "SETTLED"] }
+                    }
+                });
+                isPayment = !!paymentCheck;
+                isCreator = room.createdById === userId;
+                isJoining = room.participants.some(p => p.userId === userId);
+            }
+
+            return {
+                ...room,
+                isJoining,
+                isCreator,
+                isPayment,
+            };
         },
+
 
         async findByIds(ids) {
             return prisma.room.findMany({

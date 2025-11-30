@@ -54,10 +54,42 @@ export function makeUserRepository({ prisma }) {
         select: safeUserSelect,
       });
       if (!user) return null;
+
+      const [dinnerCount, meetupCount, eventCount] = await Promise.all([
+        prisma.participant.count({ where: { userId: id, room: { type: "dinner" } } }),
+        prisma.participant.count({ where: { userId: id, room: { type: "meetup" } } }),
+        prisma.participant.count({ where: { userId: id, room: { type: "event" } } }),
+      ]);
+
       return {
         ...user,
-        age: calculateAge(user.bornDate)
+        age: calculateAge(user.bornDate),
+        joinedRoomCounts: {
+          dinner: dinnerCount,
+          meetup: meetupCount,
+          event: eventCount,
+        },
       };
+    },
+
+    /**
+     * Finds a temporary user by their unique ID.
+     * @param {string} id - The ID of the user.
+     * @returns {Promise<object|null>} The user object or null if not found.
+     */
+    // TODO: Change this to include what you need, maybe verified? maybe notDeleted?
+    async findTemporaryUser(id) {
+      const user = await prisma.user.findUnique({
+        where: { id },
+        select: {
+          mbti: true,
+          mbtiDesc: true,
+          descPersonal: true,
+        },
+      });
+      if (!user) return null;
+
+      return user;
     },
 
     /**
@@ -185,7 +217,37 @@ export function makeUserRepository({ prisma }) {
             : undefined
         },
         include: { preferences: true },
-      });    
+      });
+    },
+
+    /**
+     * Finds an existing user by email.
+     * @param {string} email - The email of the user.
+     * @returns {Promise<object|null>} The user object or null if not found.
+     */
+    async findDummyUser(email) {
+      return prisma.user.findFirst({
+        where: { email, passwordHash: null },
+        select: safeUserSelect,
+      });
+    },
+
+    /**
+     * Finds an existing user by email.
+     * @param {string} email - The email of the user.
+     * @returns {Promise<object|null>} The user object or null if not found.
+     */
+    async findExistingUser(email) {
+      return prisma.user.findFirst({
+        where: { email, passwordHash: { not: null } },
+        select: safeUserSelect,
+      });
+    },
+
+    async deleteByEmail(email) {
+      return prisma.user.delete({
+        where: { email: email },
+      });
     },
 
     /**

@@ -11,12 +11,12 @@ function interpolate(template, variables) {
   return template.replace(/{{\s*(\w+)\s*}}/g, (_, key) => variables[key] ?? "");
 }
 
-function buildVerificationUrl(appUrl, token) {
+function buildVerificationUrl(appUrl, token, email) {
   const baseUrl = appUrl.endsWith("/") ? appUrl.slice(0, -1) : appUrl;
-  return `${baseUrl}/verify?token=${encodeURIComponent(token)}`;
+  return `${baseUrl}/verify?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`;
 }
 
-export function buildSendVerificationEmail({ appUrl, token, name, username }) {
+export function buildSendVerificationEmail({ appUrl, token, name, email, username }) {
   if (!appUrl) {
     throw new Error("buildSendVerificationEmail: appUrl is required");
   }
@@ -25,7 +25,7 @@ export function buildSendVerificationEmail({ appUrl, token, name, username }) {
   }
 
   const displayName = (name || username || "there").trim();
-  const verificationUrl = buildVerificationUrl(appUrl, token);
+  const verificationUrl = buildVerificationUrl(appUrl, token, email);
 
   const html = interpolate(htmlTemplate, {
     displayName,

@@ -23,6 +23,7 @@ const customerSchema = z.object({
 
 export const createPaymentSchema = z.object({
   body: z.object({
+    roomId: z.string(),
     amount: intNumber,
     items: z.array(itemSchema).optional(),
     metadata: z.object({}).passthrough().optional(), // avoid z.record() bug in classic build

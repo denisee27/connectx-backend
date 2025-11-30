@@ -2,15 +2,16 @@ export default {
   async createPayment(req, res, next) {
     try {
       const paymentService = req.scope.resolve("paymentService");
-      const { amount, items = [], metadata = {}, customer = {} } = req.validated?.body || req.body;
+      const { amount, roomId, items = [], metadata = {}, customer = {} } = req.validated?.body || req.body;
       const result = await paymentService.createPayment({
         userId: req.user?.userId,
+        roomId,
         amount,
         items,
         metadata,
         customer,
       });
-
+      console.log('result', result);
       res.status(201).json({ success: true, data: result });
     } catch (error) {
       next(error);
