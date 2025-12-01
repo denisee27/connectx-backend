@@ -230,13 +230,12 @@ export function makeAuthService({
       if (!role) {
         throw new ValidationError("Default role User not found");
       }
-
       const hashedPassword = await bcrypt.hash(password, env.BCRYPT_ROUNDS);
-
+      
       const token = crypto.randomBytes(32).toString("hex");
       const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
       const expiresAt = addTime(new Date(), "24h");
-
+      
       const verificationEmail = buildSendVerificationEmail({
         appUrl: env.APP_URL,
         token,

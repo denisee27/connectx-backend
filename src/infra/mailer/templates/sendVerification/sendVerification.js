@@ -24,6 +24,8 @@ export function buildSendVerificationEmail({ appUrl, token, name, email, usernam
     throw new Error("buildSendVerificationEmail: token is required");
   }
 
+  console.log(email)
+
   const displayName = (name || username || "there").trim();
   const verificationUrl = buildVerificationUrl(appUrl, token, email);
 

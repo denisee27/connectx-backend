@@ -209,7 +209,6 @@ export function makePaymentService({
         webhookPayload: payload,
       };
       if (settlementTime && (status === PaymentStatus.SETTLED || status === PaymentStatus.PAID)) {
-        console.log(payment)
         const roomId = payment.roomId;
         const userId = payment.userId;
         await roomRepository.joinRoom(roomId, userId);
