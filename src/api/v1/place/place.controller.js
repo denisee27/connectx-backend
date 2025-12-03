@@ -8,6 +8,17 @@ export default {
             next(error);
         }
     },
+    async getCityBySlug(req, res, next) {
+        try {
+            const placeService = req.scope.resolve("placeService");
+            const { slug } = req.params;
+            const city = await placeService.getCityBySlug(slug);
+            res.status(200).json(city);
+        } catch (error) {
+            next(error);
+        }
+    },
+
     async getRegions(req, res, next) {
         try {
             const placeService = req.scope.resolve("placeService");

@@ -38,58 +38,83 @@ export function makeRegionRepository({ prisma }) {
          * @param {string} regionId
          * @returns {Promise<Region[]>}
          */
-        async findRoomsFromRegion(regionId) {
+        async findRoomsFromRegion() {
             const rawData = await prisma.region.findMany({
                 where: {
-                    rooms: {
+                    countries: {
                         some: {
-                            datetime: {
-                                gte: new Date()
+                            cities: {
+                                some: {
+                                    rooms: {
+                                        some: {
+                                            datetime: {
+                                                gte: new Date()
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
-                    },
+                    }
                 },
                 select: {
                     id: true,
                     name: true,
-                    rooms: {
-                        where: {
-                            datetime: {
-                                gte: new Date()
-                            }
-                        },
+                    countries: {
                         select: {
-                            city: {
+                            cities: {
+                                where: {
+                                    rooms: {
+                                        some: {
+                                            datetime: {
+                                                gte: new Date()
+                                            }
+                                        }
+                                    }
+                                },
                                 select: {
                                     id: true,
                                     name: true,
+                                    slug: true,
+                                    _count: {
+                                        select: {
+                                            rooms: {
+                                                where: {
+                                                    datetime: {
+                                                        gte: new Date()
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
             });
-            const formattedData = rawData.map(region => {
-                const cityMap = {};
 
-                region.rooms.forEach(room => {
-                    const city = room.city;
-                    if (city) {
-                        if (!cityMap[city.id]) {
-                            cityMap[city.id] = {
-                                id: city.id,
-                                name: city.name,
-                                count: 0
-                            };
-                        }
-                        cityMap[city.id].count += 1;
-                    }
+            const formattedData = rawData.map(region => {
+                const cities = [];
+
+                region.countries.forEach(country => {
+                    country.cities.forEach(city => {
+                        cities.push({
+                            id: city.id,
+                            name: city.name,
+                            slug: city.slug || "",
+                            count: city._count.rooms
+                        });
+                    });
                 });
+
+                // Sort cities by count descending
+                cities.sort((a, b) => b.count - a.count);
 
                 return {
                     id: region.id,
                     name: region.name,
-                    cities: Object.values(cityMap)
+                    cities: cities
                 };
             });
 

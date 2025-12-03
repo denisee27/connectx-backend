@@ -14,7 +14,7 @@ const toIntAmount = (value) => {
   return Math.round(num);
 };
 
-const normalizeItems = (items = [], total) => {
+const normalizeItems = (items = [], room = {}, creator = {}, total) => {
   if (!Array.isArray(items) || !items.length) {
     return [
       {
@@ -27,23 +27,35 @@ const normalizeItems = (items = [], total) => {
   }
 
   return items.map((item, idx) => {
+    const capitalize = (str) => {
+      if (!str) return "";
+      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    };
+    const safeName = creator.name || "Guest";
     const price = toIntAmount(item.price);
     const qty = Number(item.quantity ?? 1);
     const quantity = Number.isFinite(qty) && qty > 0 ? Math.round(qty) : 1;
     return {
-      id: item.id || `item-${idx + 1}`,
-      name: 'Event Subscription' || `Item ${idx + 1}`,
+      id: (room.title || "").slice(0, 45) || `item-${idx + 1}`,
+      name: 'Event By ' + capitalize(safeName),
       price,
       quantity,
     };
   });
 };
 
-const buildCustomerDetails = (customer = {}) => ({
-  first_name: customer.firstName || customer.first_name || "Guest",
-  last_name: customer.lastName || customer.last_name || "",
-  email: customer.email || "guest@example.com",
-  phone: customer.phone || customer.phoneNumber || "",
+const capitalize = (str) => {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+};
+
+const buildCustomerDetails = (creator = {}, room) => ({
+  first_name: capitalize(creator.name || "Guest"),
+  email: creator.email || "guest@example.com",
+  phone: creator.phoneNumber || "",
+  billing_address: {
+    address: creator.bankName + ' - ' + creator.bankAccount + ' - ' + room.title,
+  },
 });
 
 const mapMidtransStatus = (transactionStatus, fraudStatus) => {
@@ -68,12 +80,11 @@ const mapMidtransStatus = (transactionStatus, fraudStatus) => {
   }
 };
 
-const buildOrderId = (userId) => {
+const buildOrderId = (userId, room) => {
+  const roomSlug = (room.slug || "").slice(0, 25);
   const safeUser = (userId || "guest").replace(/[^a-zA-Z0-9]/g, "").slice(0, 8) || "guest";
-  //const ts = Date.now().toString(36); // compact timestamp
   const rnd = Math.random().toString(36).slice(2, 6);
-  // Midtrans order_id max length ~50; this stays well under the limit
-  return `connectx_${safeUser}_${rnd}`;
+  return `${roomSlug}_${safeUser}_${rnd}`;
 };
 
 export function makePaymentService({
@@ -103,7 +114,7 @@ export function makePaymentService({
         payment,
         status,
         roomName,
-        frontendUrl: process.env.FRONTEND_URL || "http://localhost:5173",
+        frontendUrl: env.FRONTEND_URL || "http://localhost:5173",
       });
 
       await mailerService.sendEmail({
@@ -129,19 +140,20 @@ export function makePaymentService({
       if (!userId) {
         throw new ValidationError("User is required to create a payment");
       }
-
+      const room = await roomRepository.findById(roomId);
+      const creator = await userRepository.findById(room.createdById);
       const grossAmount = toIntAmount(amount);
-      const orderId = buildOrderId(userId);
+      const orderId = buildOrderId(userId, room);
       const client = ensureClient();
-
       const params = {
         transaction_details: {
           order_id: orderId,
           gross_amount: grossAmount,
         },
         credit_card: { secure: true },
-        customer_details: buildCustomerDetails(customer),
-        item_details: normalizeItems(items, grossAmount),
+        customer_details: buildCustomerDetails(creator, room),
+        item_details: normalizeItems(items, room, creator, grossAmount),
+
       };
 
       const transaction = await client.createTransaction(params);

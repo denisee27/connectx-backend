@@ -5,10 +5,17 @@
  * @typedef {import('../utils/pagination.js').Pagination} Pagination
  */
 
+import { sl } from 'zod/locales';
+
 export const safeCitySelect = {
     id: true,
     name: true,
     countryId: true,
+    longitude: true,
+    latitude: true,
+    country: true,
+    slug: true,
+    rooms: true,
 };
 
 /**
@@ -55,7 +62,49 @@ export function makeCityRepository({ prisma }) {
                             capacity: true,
                             regionId: true,
                         }
-                        
+
+                    }
+                },
+            });
+        },
+
+        /**
+         * @param {string} slug
+         * @returns {Promise<City | null>}
+         */
+        findBySlug(slug) {
+            return prisma.city.findFirst({
+                where: {
+                    OR: [
+                        { slug: slug },
+                        { id: slug }
+                    ]
+                }, select: {
+                    ...safeCitySelect,
+                    rooms: {
+                        where: {
+                            datetime: {
+                                gte: new Date()
+                            }
+                        },
+                        select: {
+                            id: true,
+                            title: true,
+                            slug: true,
+                            type: true,
+                            address: true,
+                            placeName: true,
+                            gmaps: true,
+                            maxParticipant: true,
+                            banner: true,
+                            datetime: true,
+                            city: true,
+                            _count: {
+                                select: {
+                                    participants: true
+                                }
+                            }
+                        }
                     }
                 },
             });

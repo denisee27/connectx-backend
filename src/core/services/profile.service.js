@@ -9,5 +9,8 @@ export function makeProfileService({ userRepository }) {
         async findTemporaryUser(id) {
             return userRepository.findTemporaryUser(id);
         },
+        async updateBankProfile(id, data) {
+            return userRepository.update(id, data);
+        },
     };
 }

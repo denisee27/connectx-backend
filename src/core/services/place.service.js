@@ -3,6 +3,9 @@ export function makePlaceService({ cityRepository, regionRepository, countryRepo
         async getCountries() {
             return countryRepository.findAll();
         },
+        async getCityBySlug(slug) {
+            return cityRepository.findBySlug(slug);
+        },
         async getRegions() {
             return regionRepository.findAll();
         },

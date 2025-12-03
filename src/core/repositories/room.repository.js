@@ -18,6 +18,7 @@ export const safeRoomSelect = {
     placeName: true,
     title: true,
     description: true,
+    price: true,
     datetime: true,
     address: true,
     gmaps: true,
@@ -44,7 +45,8 @@ export function makeRoomRepository({ prisma }) {
          * @returns {Promise<void>}
          */
         async joinRoom(roomId, userId) {
-            const exists = await prisma.participant.findUnique({
+            let exists
+            exists = await prisma.participant.findUnique({
                 where: {
                     roomId_userId: {
                         roomId,
@@ -54,13 +56,14 @@ export function makeRoomRepository({ prisma }) {
             });
 
             if (!exists) {
-                await prisma.participant.create({
+                exists = await prisma.participant.create({
                     data: {
                         roomId,
                         userId,
                     },
                 });
             }
+            return exists;
         },
         /**
          * @returns {Promise<Room[]>}
@@ -223,15 +226,13 @@ export function makeRoomRepository({ prisma }) {
         },
 
 
-        async findByIds(ids) {
-            return prisma.room.findMany({
-                where: {
-                    id: {
-                        in: ids,
-                    },
-                },
+        async findById(id) {
+            console.log(id)
+            return prisma.room.findUnique({
+                where: { id },
                 select: safeRoomSelect,
             });
+
         },
 
         /**
@@ -329,6 +330,7 @@ export function makeRoomRepository({ prisma }) {
                 regionId,
                 cityId,
                 type,
+                price: Number(payload.price) || 0,
                 title: payload.title,
                 placeName: payload.placeName ?? payload.place_name ?? null,
                 description: payload.description ?? null,

@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
+import { buildSendJoiningEventEmail } from "../../infra/mailer/templates/sendJoiningEvent/sendJoiningEvent.js";
 
-export function makeRoomService({ roomRepository, env }) {
+export function makeRoomService({ roomRepository, userRepository, mailerService, env }) {
     return {
         async getHighlights(cityId) {
             return roomRepository.getHighlights(cityId);
@@ -24,7 +25,35 @@ export function makeRoomService({ roomRepository, env }) {
             return roomRepository.findBySlug(slug, userId);
         },
         async joinRoom(roomId, userId) {
-            return roomRepository.joinRoom(roomId, userId);
+            const result = await roomRepository.joinRoom(roomId, userId);
+            if (result) {
+                const user = await userRepository.findById(userId);
+                const room = await roomRepository.findById(roomId);
+                console.log(room)
+                if (user && room) {
+                    const emailContent = buildSendJoiningEventEmail({
+                        name: user.name,
+                        eventTitle: room.title,
+                        eventDate: new Date(room.datetime).toLocaleString('en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        }),
+                        eventLocation: room.placeName || room.address || "TBA",
+                        eventLink: `${env.FRONTEND_URL}/event/${room.slug}`
+                    });
+
+                    await mailerService.sendEmail({
+                        to: user.email,
+                        ...emailContent
+                    });
+                }
+            }
+
+            return result;
         },
         async getRooms(filters) {
             const { page, limit, sort, categories, country, title } = filters;

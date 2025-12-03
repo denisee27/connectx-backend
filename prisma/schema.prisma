@@ -26,6 +26,8 @@ model User {
   cityId            String?    @map("city_id")
   city              City?      @relation(fields: [cityId], references: [id])
   personality       Json?
+  bankName          String?       @map("bank_name")
+  bankAccount       String?       @map("bank_account")
   bornDate          DateTime? @map("born_date")
   occupation        String?
   mbti              String?
@@ -287,6 +289,7 @@ model Room {
   description    String?       @db.Text
   datetime       DateTime
   banner         String?
+  price          Decimal?     @default(0) @db.Decimal(15, 2)
   address        String?
   gmaps          String?
   maxParticipant Int           @map("max_participant")

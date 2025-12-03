@@ -22,6 +22,8 @@ export function makeUserRepository({ prisma }) {
     mbtiDesc: true,
     descPersonal: true,
     bornDate: true,
+    bankAccount: true,
+    bankName: true,
     preferences: true,
   };
   const calculateAge = (bornDate) => {
@@ -217,6 +219,16 @@ export function makeUserRepository({ prisma }) {
             : undefined
         },
         include: { preferences: true },
+      });
+    },
+
+    async updateBankProfile(id, data) {
+      return prisma.user.update({
+        where: { id },
+        data: {
+          ...data,
+        },
+        select: safeUserSelect,
       });
     },
 

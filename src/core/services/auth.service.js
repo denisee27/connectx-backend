@@ -92,7 +92,7 @@ export function makeAuthService({
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role,
+          bankName: user.bankName || null,
           city: user.city,
           profilePictureUrl: user.profilePictureUrl,
           isPayment: !!paymentData,
@@ -129,6 +129,7 @@ export function makeAuthService({
         role: user.role,
         status: user.status,
         city: user.city,
+        bankName: user.bankName || null,
         profilePictureUrl: user.profilePictureUrl,
         isPayment: !!paymentData,
         phoneNumber: user.phoneNumber,
@@ -231,11 +232,11 @@ export function makeAuthService({
         throw new ValidationError("Default role User not found");
       }
       const hashedPassword = await bcrypt.hash(password, env.BCRYPT_ROUNDS);
-      
+
       const token = crypto.randomBytes(32).toString("hex");
       const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
       const expiresAt = addTime(new Date(), "24h");
-      
+
       const verificationEmail = buildSendVerificationEmail({
         appUrl: env.APP_URL,
         token,

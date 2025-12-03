@@ -25,6 +25,16 @@ export default {
         }
     },
 
+    async updateBankProfile(req, res, next) {
+        try {
+            const profileService = req.scope.resolve("profileService");
+            const profile = await profileService.updateBankProfile(req.user.userId, req.body);
+            res.status(200).json({ success: true, data: profile });
+        } catch (error) {
+            next(error);
+        }
+    },
+
 
     async updateProfile(req, res, next) {
         try {
@@ -37,7 +47,7 @@ export default {
             }
 
             const {
-                name, email, phoneNumber, gender, countryId, cityId, bornDate,
+                name, email, phoneNumber, gender, countryId, cityId, bornDate, bankAccount, bankName,
                 currentPassword, newPassword, confirmPassword,
             } = req.body;
 
@@ -88,9 +98,11 @@ export default {
                 gender,
                 countryId,
                 cityId,
-                bornDate: bornDate ? new Date(bornDate) : undefined,
-                profilePictureUrl: filename || undefined,
-                preferences, // PENTING: kirim ke repository agar nested write berjalan
+                bornDate: new Date(bornDate),
+                bankAccount,
+                bankName,
+                profilePictureUrl: filename,
+                preferences,
             };
 
             const profile = await profileService.updateProfile(userId, dataToUpdate);

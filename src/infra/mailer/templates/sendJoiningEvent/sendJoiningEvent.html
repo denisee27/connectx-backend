@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>You've Joined the Event!</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f6f9fc;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #FF9836 0%, #FF7A2F 100%);
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .greeting {
+            font-size: 18px;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+        }
+
+        .event-card {
+            background-color: #fff8f3;
+            border: 1px solid #ffe0cc;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .event-title {
+            color: #FF7A2F;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .event-detail {
+            display: flex;
+            margin-bottom: 8px;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .event-label {
+            width: 80px;
+            font-weight: 600;
+            color: #888;
+        }
+
+        .message {
+            color: #4a5568;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            display: block;
+            width: fit-content;
+            margin: 0 auto;
+            background-color: #FF7A2F;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 14px 32px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #e0621d;
+        }
+
+        .footer {
+            background-color: #f8fafc;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>You're In! 🎉</h1>
+        </div>
+        <div class="content">
+            <p class="greeting">Hi {{name}},</p>
+
+            <p class="message">
+                Congratulations! You have successfully joined the event. We are excited to have you with us.
+                Get ready for an amazing experience and the chance to connect with great people!
+            </p>
+
+            <div class="event-card">
+                <div class="event-title">{{eventTitle}}</div>
+                <div class="event-detail">
+                    <span class="event-label">When:</span>
+                    <span>{{eventDate}}</span>
+                </div>
+                <div class="event-detail">
+                    <span class="event-label">Where:</span>
+                    <span>{{eventLocation}}</span>
+                </div>
+            </div>
+
+            <a href="{{eventLink}}" class="btn" style="color: #ffffff;">View Event Details</a>
+        </div>
+        <div class="footer">
+            <p>&copy; {{year}} ConnectX. All rights reserved.</p>
+            <p>You received this email because you joined an event on ConnectX.</p>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -19,6 +19,7 @@ const upload = multer({
 router.get('/', authMiddleware, profileController.getProfile);
 router.get('/:id/temporary', profileController.getTemporaryUser);
 router.post('/update', authMiddleware, upload.single('profilePictureUrl'), profileController.updateProfile);
+router.put('/update-bank', authMiddleware, profileController.updateBankProfile);
 
 
 export { router as profileRouter };
