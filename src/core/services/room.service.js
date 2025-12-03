@@ -29,7 +29,6 @@ export function makeRoomService({ roomRepository, userRepository, mailerService,
             if (result) {
                 const user = await userRepository.findById(userId);
                 const room = await roomRepository.findById(roomId);
-                console.log(room)
                 if (user && room) {
                     const emailContent = buildSendJoiningEventEmail({
                         name: user.name,
@@ -56,7 +55,7 @@ export function makeRoomService({ roomRepository, userRepository, mailerService,
             return result;
         },
         async getRooms(filters) {
-            const { page, limit, sort, categories, country, title } = filters;
+            const { page, limit, sort, categories, country, title, paymentType } = filters;
 
             const query = {
                 where: {},
@@ -83,6 +82,18 @@ export function makeRoomService({ roomRepository, userRepository, mailerService,
                 query.where.city = {
                     countryId: country,
                 };
+            }
+
+            if (paymentType === 'paid') {
+                query.where.price = {
+                    gt: 0
+                };
+            } else if (paymentType === 'free') {
+                query.where.price = {
+                    equals: 0
+                };
+            } else {
+                delete query.where.price;
             }
 
             if (sort === 'datetime_asc') {

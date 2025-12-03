@@ -57,10 +57,11 @@ export function makeUserRepository({ prisma }) {
       });
       if (!user) return null;
 
-      const [dinnerCount, meetupCount, eventCount] = await Promise.all([
+      const [dinnerCount, meetupCount, eventCount, roomCreated] = await Promise.all([
         prisma.participant.count({ where: { userId: id, room: { type: "dinner" } } }),
         prisma.participant.count({ where: { userId: id, room: { type: "meetup" } } }),
         prisma.participant.count({ where: { userId: id, room: { type: "event" } } }),
+        prisma.room.count({ where: { createdById: id } }),
       ]);
 
       return {
@@ -70,6 +71,7 @@ export function makeUserRepository({ prisma }) {
           dinner: dinnerCount,
           meetup: meetupCount,
           event: eventCount,
+          roomCreated: roomCreated,
         },
       };
     },

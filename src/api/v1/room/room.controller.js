@@ -55,20 +55,22 @@ export default {
             const roomService = req.scope.resolve("roomService");
             const {
                 page = 1,
-                limit = 10,
+                limit = 12,
                 sort = 'datetime_asc',
                 categories,
                 country,
+                paymentType,
                 title
             } = req.query;
 
             const filters = {
                 page: parseInt(page, 10),
-                limit: parseInt(limit, 10),
+                limit: parseInt(limit, 12),
                 sort,
                 categories,
                 country,
-                title
+                title,
+                paymentType
             };
 
             const rooms = await roomService.getRooms(filters);

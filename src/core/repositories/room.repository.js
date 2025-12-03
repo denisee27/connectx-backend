@@ -21,6 +21,7 @@ export const safeRoomSelect = {
     price: true,
     datetime: true,
     address: true,
+    reservation: true,
     gmaps: true,
     maxParticipant: true,
     banner: true,
@@ -330,6 +331,7 @@ export function makeRoomRepository({ prisma }) {
                 regionId,
                 cityId,
                 type,
+                reservation: payload.reservationInformation ?? null,
                 price: Number(payload.price) || 0,
                 title: payload.title,
                 placeName: payload.placeName ?? payload.place_name ?? null,
@@ -368,6 +370,65 @@ export function makeRoomRepository({ prisma }) {
             return prisma.room.delete({
                 where: { id },
                 select: safeRoomSelect,
+            });
+        },
+
+        async findByIds(ids) {
+            return prisma.room.findMany({
+                where: { id: { in: ids } },
+                select: safeRoomSelect
+            });
+        },
+
+        async findRandomByCountry(countryId, limit = 3) {
+            const where = {
+                city: {
+                    countryId: countryId
+                },
+                datetime: { gte: new Date() }
+            };
+
+            const count = await prisma.room.count({ where });
+            if (count === 0) return [];
+
+            // If count is small, fetch all and shuffle
+            if (count <= limit * 5) {
+                const rooms = await prisma.room.findMany({
+                    where,
+                    select: safeRoomSelect
+                });
+                return rooms.sort(() => 0.5 - Math.random()).slice(0, limit);
+            }
+
+            // If large, pick random skip
+            const skip = Math.floor(Math.random() * (count - limit));
+            return prisma.room.findMany({
+                where,
+                skip: Math.max(0, skip),
+                take: limit,
+                select: safeRoomSelect
+            });
+        },
+
+        async findRandom(limit = 3) {
+            const where = { datetime: { gte: new Date() } };
+            const count = await prisma.room.count({ where });
+            if (count === 0) return [];
+
+            if (count <= limit * 5) {
+                const rooms = await prisma.room.findMany({
+                    where,
+                    select: safeRoomSelect
+                });
+                return rooms.sort(() => 0.5 - Math.random()).slice(0, limit);
+            }
+
+            const skip = Math.floor(Math.random() * (count - limit));
+            return prisma.room.findMany({
+                where,
+                skip: Math.max(0, skip),
+                take: limit,
+                select: safeRoomSelect
             });
         },
 

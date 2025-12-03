@@ -287,6 +287,7 @@ model Room {
   placeName      String?      @map("place_name")
   title          String
   description    String?       @db.Text
+  reservation    String?      
   datetime       DateTime
   banner         String?
   price          Decimal?     @default(0) @db.Decimal(15, 2)

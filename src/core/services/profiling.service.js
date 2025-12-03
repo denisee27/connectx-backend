@@ -17,7 +17,6 @@ export function makeProfilingService({ roomRepository, questionRepository, categ
             const userDummy = await userRepository.findDummyUser(profile.email);
             if (userDummy && !isAuthenticated) {
                 await userRepository.deleteByEmail(userDummy.email);
-
             }
 
             const userExisting = await userRepository.findExistingUser(profile.email);
@@ -73,10 +72,25 @@ export function makeProfilingService({ roomRepository, questionRepository, categ
                     }
                 });
             const matches = response.data.matches || [];
+
             if (!matches || matches.length === 0) {
-                logger.warn("Matchmaking API returned no room IDs");
-                return { rooms: [] };
+                logger.warn("Matchmaking API returned no room IDs, falling back to random selection");
+
+                let fallbackRooms = [];
+
+                // 1. Try to find random rooms in the user's country
+                if (newUser.countryId) {
+                    fallbackRooms = await roomRepository.findRandomByCountry(newUser.countryId, 3);
+                }
+
+                // 2. If no rooms in country (or country not set), get random rooms globally
+                if (fallbackRooms.length === 0) {
+                    fallbackRooms = await roomRepository.findRandom(3);
+                }
+
+                return { id: newUser.id, rooms: fallbackRooms };
             }
+
             const roomIds = matches.map(match => match.id);
             const rooms = await roomRepository.findByIds(roomIds);
             logger.info("Operation successful");
