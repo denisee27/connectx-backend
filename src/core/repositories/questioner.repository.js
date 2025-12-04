@@ -29,33 +29,6 @@ export function makeQuestionerRepository({ prisma }) {
         },
 
         /**
-         * @param {Pagination} pagination
-         * @returns {Promise<PageData<Questioner>>}
-         */
-        // async findMany({ page, limit, search, type, category }) {
-        //     const where = {
-        //         question: {
-        //             contains: search,
-        //             mode: 'insensitive',
-        //         },
-        //         type,
-        //         category,
-        //     };
-
-        //     const [questioners, total] = await Promise.all([
-        //         prisma.questioner.findMany({
-        //             where,
-        //             select: safeQuestionerSelect,
-        //             take: limit,
-        //             skip: (page - 1) * limit,
-        //         }),
-        //         prisma.questioner.count({ where }),
-        //     ]);
-
-        //     return getPageData(questioners, total, page, limit);
-        // },
-
-        /**
          * @param {Questioner} data
          * @returns {Promise<Questioner>}
          */
@@ -85,6 +58,19 @@ export function makeQuestionerRepository({ prisma }) {
         delete(id) {
             return prisma.questioner.delete({
                 where: { id },
+                select: safeQuestionerSelect,
+            });
+        },
+
+        /**
+         * @param {string} category
+         * @param {number} limit
+         * @returns {Promise<Questioner[]>}
+         */
+        async findRandomByCategory(category, limit = 5) {
+            return prisma.questioner.findMany({
+                where: { category },
+                take: limit,
                 select: safeQuestionerSelect,
             });
         },

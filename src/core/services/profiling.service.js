@@ -98,16 +98,37 @@ export function makeProfilingService({ roomRepository, questionRepository, categ
         },
 
         async getQuestions() {
-            const allQuestions = await questionRepository.findAll();
-            for (let i = allQuestions.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
+            const targetCategories = [
+                "Thinking / Feeling",
+                "Social Comfort & Interaction",
+                "Openness & Growth",
+                "Meetup Style",
+                "Judging / Perceiving",
+                "Intuition / Sensing",
+                "Interest & Social Preference",
+                "Extraversion / Introversion",
+                "Connection Goals",
+                "Behavior & Decision Making"
+            ];
+
+            const selectedQuestions = [];
+
+            for (const category of targetCategories) {
+                const questions = await questionRepository.findRandomByCategory(category, 5);
+                selectedQuestions.push(...questions);
             }
 
-            const selectedQuestions = allQuestions.slice(0, 50);
+            // Shuffle the final list of 50 questions
+            for (let i = selectedQuestions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [selectedQuestions[i], selectedQuestions[j]] = [selectedQuestions[j], selectedQuestions[i]];
+            }
+
             const payload = {
                 "mbti_questions": selectedQuestions,
             };
+
+            console.log(payload)
 
             const response = await axios.post(
                 `${env.AI_AGENT_URL}/mbti/questions`,
