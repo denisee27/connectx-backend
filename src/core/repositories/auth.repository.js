@@ -40,6 +40,11 @@ export function makeAuthRepository({ prisma }) {
         where: { email },
       });
     },
+    async findByEmailWithPasswordHash(email) {
+      return prisma.user.findUnique({
+        where: { email, passwordHash: { not: null } },
+      });
+    },
     async findByEmailIsUsing(email,) {
       return prisma.user.findUnique({
         where: { email, passwordHash: { not: null } },
