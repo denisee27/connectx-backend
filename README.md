@@ -1,13 +1,6 @@
-# Node.js Clean Architecture Template - Project Setup Guide
-
-## Building Enterprise-Grade REST APIs with Node.js + Express + Prisma
+# ConnectX Backend
 
 **Template Version**: 1.0  
-**Last Updated**: October 13, 2025
-
-> **Note**: This is a project-agnostic template. This is just a foundational template.
-
-> **Not**: if you think specific parts need to be documented, please add a .md documentation at /Guide. Thank you
 
 ---
 
